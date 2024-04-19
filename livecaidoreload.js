@@ -2,7 +2,7 @@ const fs = require("fs");
 const WebSocket = require("ws");
 
 const JS_FILE_PATH =
-  "/Users/bebiks/Documents/GitHub/EvenBetterExtensions/final/index.js";
+  "/Users/bebiks/Documents/GitHub/EvenBetter/final/index.js";
 const CSS_FILE_PATH =
   "/Users/bebiks/Documents/GitHub/EvenBetter/final/style.css";
 
@@ -80,3 +80,5 @@ wss.on("connection", (ws) => {
     console.log("Client disconnected");
   });
 });
+
+console.log("Live reload server started. Waiting for changes...");
