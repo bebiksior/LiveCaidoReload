@@ -10,3 +10,6 @@ This is a simple script that will look for changes in `JS_FILE_PATH` and `CSS_FI
 ```javascript
 EvenBetterAPI.hotReloading();
 ```
+
+## Note
+This script is still a work in progress although it works fine for now. If you have any suggestions or improvements, feel free to open an issue or a pull request.
