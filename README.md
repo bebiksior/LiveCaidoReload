@@ -1,15 +1,17 @@
-# LiveCaidoReload [WIP]
+# LiveCaidoReload
  
-This is a simple script that will look for changes in `JS_FILE_PATH` and `CSS_FILE_PATH` and reload the Caido with the new changes. It's a simple way to develop the Caido JS plugins without having to reload the page every time you make a change.
+`LiveCaidoReload` is a simple script that allows you to quickly reload your Caido JS plugins without having to update custom CSS or JS every time you make a change. This script is intended to be used with the [EvenBetterAPI](https://github.com/bebiksior/EvenBetterAPI)
 
 ## How to use
 1. Clone the repository
-2. Modify the `JS_FILE_PATH` and `CSS_FILE_PATH` variables in the `livecaidoreload.js` file
-3. Run the `livecaidoreload.js` script by using the command `npm start`
-4. Install [EvenBetterAPI](https://github.com/bebiksior/EvenBetterAPI) to your JS plugin and add the following code to your plugin:
+2. Run `npm install -g` to install the script globally
+3. Install [EvenBetterAPI](https://github.com/bebiksior/EvenBetterAPI) to your JS plugin and add the following code to your plugin:
 ```javascript
 EvenBetterAPI.hotReloading();
 ```
+4. Run `livecaidoreload` in the directory where your Caido plugins JS/CSS files are located.
+You can also run `livecaidoreload <jspath> <csspath>` to specify the paths to your JS and CSS files.
+5. Run your Caido plugin, if everything went well, you should see "Connected to Caido Hot Reloading Server" toast message.
 
-## Note
-This script is still a work in progress although it works fine for now. If you have any suggestions or improvements, feel free to open an issue or a pull request.
+## Contributing
+Feel free to contribute to the project by creating a pull request. If you have any issues or feature requests, please create an issue.
