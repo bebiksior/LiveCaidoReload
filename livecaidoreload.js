@@ -12,7 +12,6 @@ const wss = new WebSocketServer({ port: 8081 });
 const EVENT_TYPES = {
   LOAD_JS: "caido:loadJS",
   LOAD_CSS: "caido:loadCSS",
-  RELOAD: "caido:reload",
 };
 
 const sendWebSocketMessage = (message) => {
@@ -63,10 +62,6 @@ const handleFileChange = (filePath) => {
     console.log(chalk.red("Unsupported file type changed. Ignoring..."));
     return;
   }
-
-  setTimeout(() => {
-    sendEvent(EVENT_TYPES.RELOAD);
-  }, 100);
 };
 
 const files = [];
