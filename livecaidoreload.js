@@ -42,11 +42,10 @@ const sendEvent = async (eventType, data) => {
 const previousFileContent = {};
 const handleFileChange = (filePath) => {
   const currentFileContent = readFile(filePath);
-
   if (
     currentFileContent === null ||
     currentFileContent === previousFileContent[filePath]
-  ) {
+  ) { 
     return;
   }
 
@@ -89,16 +88,19 @@ files.forEach((path) => {
   }
 });
 
-files.forEach((path) => {
-  fs.watch(
-    path,
-    {
-      persistent: true,
-      recursive: false,
-    },
-    () => handleFileChange(path)
-  );
-});
+const currentDir = process.cwd();
+fs.watch(
+  currentDir,
+  {
+    persistent: true,
+    recursive: true,
+  },
+  (event, fileName) => {
+    if (files.includes(fileName)) {
+      handleFileChange(fileName);
+    }
+  }
+);
 
 wss.on("connection", (ws) => {
   console.log(chalk.green("Client connected"));
