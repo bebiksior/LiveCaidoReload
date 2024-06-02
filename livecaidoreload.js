@@ -3,75 +3,65 @@
 import fs from "fs";
 import chalk from "chalk";
 import { WebSocketServer } from "ws";
+import crypto from "crypto";
+import path from "path";
+import chokidar from "chokidar";
+const __dirname = path.resolve();
 
-const jsPath = process.argv[2];
-const cssPath = process.argv[3];
+const pluginZipPath = process.argv[2];
 
 const wss = new WebSocketServer({ port: 8081 });
 
-const EVENT_TYPES = {
-  LOAD_JS: "caido:loadJS",
-  LOAD_CSS: "caido:loadCSS",
-};
+const createMD5 = async (filePath) => {
+  return new Promise((res, rej) => {
+    const hash = crypto.createHash("md5");
 
-const sendWebSocketMessage = (message) => {
-  wss.clients.forEach((client) => {
-    if (client.readyState === 1) {
-      // WebSocket.OPEN
-      client.send(message);
-    }
+    const rStream = fs.createReadStream(filePath);
+    rStream.on("data", (data) => {
+      hash.update(data);
+    });
+    rStream.on("end", () => {
+      res(hash.digest("hex"));
+    });
   });
 };
 
-const readFile = (filePath) => {
-  try {
-    return fs.readFileSync(filePath, "utf8");
-  } catch (err) {
-    console.log(chalk.red(`Error reading file: ${filePath}`));
-    return null;
-  }
+
+const sendEvent = async (data) => {
+  wss.clients.forEach((client) => {
+    if (client.readyState === 1) {
+      client.send(data);
+    }
+  });
+
+  console.log(chalk.green(`Sent event to clients`));
 };
 
-const sendEvent = async (eventType, data) => {
-  const message = JSON.stringify({ event: eventType, data });
-  sendWebSocketMessage(message);
-
-  console.log(chalk.green(`Sent event ${eventType} to clients`));
-};
-
-const previousFileContent = {};
-const handleFileChange = (filePath) => {
-  const currentFileContent = readFile(filePath);
-  if (
-    currentFileContent === null ||
-    currentFileContent === previousFileContent[filePath]
-  ) { 
+let previousFileHash = "";
+const handleFileChange = async (filePath) => {
+  const currentFileHash = await createMD5(filePath)
+  if (currentFileHash === previousFileHash)
     return;
-  }
 
-  previousFileContent[filePath] = currentFileContent;
+  previousFileHash = currentFileHash;
 
-  if (filePath.endsWith(".js")) {
-    console.log(chalk.yellow("JS file changed. Reloading JS..."));
-    sendEvent(EVENT_TYPES.LOAD_JS, currentFileContent);
-  } else if (filePath.endsWith(".css")) {
-    console.log(chalk.yellow("CSS file changed. Reloading CSS..."));
-    sendEvent(EVENT_TYPES.LOAD_CSS, currentFileContent);
-  } else {
-    console.log(chalk.red("Unsupported file type changed. Ignoring..."));
-    return;
+  if (filePath.endsWith(".zip")) {
+    console.log(chalk.yellow("Detected plugin zip file change"));
+    const filePath = path.join(__dirname, 'plugin.zip');
+    const fileStream = fs.createReadStream(filePath);
+    fileStream.on('data', (chunk) => {
+      console.log(chalk.green("Sending chunk"));
+      sendEvent(chunk);
+    });
+    fileStream.on('end', () => {
+      sendEvent(JSON.stringify({ end: true }));
+    });
   }
 };
 
 const files = [];
-if (jsPath || cssPath) {
-  if (jsPath) {
-    files.push(jsPath);
-  }
-
-  if (cssPath) {
-    files.push(cssPath);
-  }
+if (pluginZipPath) {
+  files.push(pluginZipPath);
 } else {
   files.push(...fs.readdirSync(process.cwd()));
 }
@@ -89,13 +79,10 @@ files.forEach((path) => {
 });
 
 const currentDir = process.cwd();
-fs.watch(
-  currentDir,
-  {
-    persistent: true,
-    recursive: true,
-  },
-  (event, fileName) => {
+chokidar.watch(currentDir).on('all', (event, path) => {
+    if (event !== "change") return;
+
+    const fileName = path.split("/").pop();
     if (files.includes(fileName)) {
       handleFileChange(fileName);
     }
@@ -117,10 +104,8 @@ console.log(
 console.log(chalk.green("Watching files:"));
 files.forEach((file) => {
   let output = chalk.green(`- ${file}`);
-  if (file.endsWith(".js")) {
-    output += chalk.yellow(" (JS)");
-  } else if (file.endsWith(".css")) {
-    output += chalk.yellow(" (CSS)");
+  if (file.endsWith(".zip")) {
+    output += chalk.yellow(" (PLUGIN ZIP)");
   } else {
     output += chalk.red(" (Unsupported)");
   }
@@ -128,7 +113,7 @@ files.forEach((file) => {
   console.log(output);
 });
 console.log(
-  chalk.yellow("Make sure your plugin has"),
-  chalk.green("EvenBetterAPI.hotReloading()"),
-  chalk.yellow("in your plugin's main file to enable hot reloading.")
+  chalk.yellow(
+    "Make sure you have installed LiveCaidoReloadPlugin in your Caido instance. Good luck!"
+  )
 );
