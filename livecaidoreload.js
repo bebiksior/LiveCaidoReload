@@ -23,9 +23,11 @@ const createMD5 = async (filePath) => {
     rStream.on("end", () => {
       res(hash.digest("hex"));
     });
+    rStream.on("error", (err) => {
+      rej(err);
+    });
   });
 };
-
 
 const sendEvent = async (data) => {
   wss.clients.forEach((client) => {
@@ -39,15 +41,18 @@ const sendEvent = async (data) => {
 
 let previousFileHash = "";
 const handleFileChange = async (filePath) => {
-  const currentFileHash = await createMD5(filePath)
-  if (currentFileHash === previousFileHash)
+  if (!fs.existsSync(filePath)) {
+    console.log(chalk.red(`File not found: ${filePath}`));
     return;
+  }
+
+  const currentFileHash = await createMD5(filePath);
+  if (currentFileHash === previousFileHash) return;
 
   previousFileHash = currentFileHash;
 
   if (filePath.endsWith(".zip")) {
     console.log(chalk.yellow("Detected plugin zip file change"));
-    const filePath = path.join(__dirname, 'plugin.zip');
     const fileStream = fs.createReadStream(filePath);
     fileStream.on('data', (chunk) => {
       console.log(chalk.green("Sending chunk"));
@@ -79,15 +84,15 @@ files.forEach((path) => {
 });
 
 const currentDir = process.cwd();
-chokidar.watch(currentDir).on('all', (event, path) => {
-    if (event !== "change") return;
+const watcher = chokidar.watch(currentDir);
 
-    const fileName = path.split("/").pop();
-    if (files.includes(fileName)) {
-      handleFileChange(fileName);
-    }
+watcher.on('all', (event, path) => {
+  const fileName = path.split("/").pop();
+
+  if ((event === "change" || event === "add") && files.includes(fileName)) {
+    handleFileChange(path);
   }
-);
+});
 
 wss.on("connection", (ws) => {
   console.log(chalk.green("Client connected"));
